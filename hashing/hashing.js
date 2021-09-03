@@ -2,7 +2,6 @@ var crypto = require("crypto");
 
 GENESIS_BLOCK_HASH = "000000";
 
-
 // The Power of a Smile
 // by Tupac Shakur
 const poem = [
@@ -80,33 +79,76 @@ function createChain() {
 
 }
 
-function verifyBlock() {
-	// check each block for:
-	//		data being non empty
-	//		genesis block hash for "00000"
-	//		index for int >= 0
-	//		hash match recomputing the hash with blockhash() 
-	// verify blockchain has all 8 lines of the poem
-	//		each as separate blocks
-	//		total of 9 blocks, including genesis block
+/**
+ * @name verifyBlock
+ * @param block current block to check
+ * @param prevBlock previous block to check against
+ * @returns boolean
+ * @description verifies a block based on the following conditions:
+ * 	data must be non empty
+ * 	hash must be "000000" for genesis block
+ * 	prevHash must be non empty
+ * 	index must be an integer >= 0
+ * 	hash must match what recomputing the has with blockHash(...) produces
+ */
+function verifyBlock(block, prevBlock) {
+	const {
+		data,
+		index,
+		hash,
+		prevHash,
+		timestamp
+	} = block;
 
-	
+	// check genesis block
+	if (index === 0 ) {
+		return hash === GENESIS_BLOCK_HASH;
+	}
+
+	// checks data is non empty
+	const hasData = Boolean(data);
+
+	// checks index is greater or equal to zero
+	const correctIndex = index >= 0;
+
+	// checks hash matches generated hash composed of prevHash, timestamp & text
+	const hasMatches = hash === generateHash({
+		prevHash: prevBlock.hash,
+		text: data,
+		timestamp
+	});
+
+	// check that previous block hash matches prevHash
+	const hasChainMatched = prevBlock.hash === prevHash;
+
+	return [hasData, correctIndex, hasMatches, hasChainMatched].every(val => val);
+
 }
 
+/**
+ * @name verifyChain
+ * @description - checks all blocks in the chain to ensure chain is valid
+ */
 function verifyChain() {
-	// check if all blocks are valid
-	// returns true or false
+	const blocks = Blockchain.getBlocks();
 
+	// Returns an array of true or false values based on outcome of block verification
+	const blockVerifications = blocks.map((block, i) => verifyBlock(block, blocks[i-1]));
+
+	return blockVerifications.every(val => val);
 }
 
-// console.log(`Blockchain is valid: ${verifyChain(Blockchain)}`);
-
-// **********************************
-
-// function blockHash(bl) {
-// 	return crypto.createHash("sha256").update(
-// 		// TODO: use block data to calculate hash
-// 	).digest("hex");
-// }
 
 createChain();
+
+// // Uncomment the following to test a broken chain (verifyChain fails) 
+// Blockchain.addBlock({
+// 	index: 5,
+// 	hash: '1234456543453534543',
+// 	prevHash: '823492375',
+// 	data: '123123123',
+// 	timestamp: Date.now(),
+// });
+
+
+console.log(`Blockchain is valid: ${verifyChain()}`);
