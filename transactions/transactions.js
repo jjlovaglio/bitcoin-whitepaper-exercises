@@ -41,12 +41,47 @@ addPoem()
 
 // **********************************
 
+/**
+ * @param data
+ * @description takes a line of a poem and creates a transaction object.
+ * transaction object should have a 'data'. 
+ * transaction needs a 'hash' field with value returned from transactionHash(...)
+ * @returns a transaction object
+ */
+function createTransaction(data) {
+	var tr = {
+		data,
+	};
+
+	tr.hash = transactionHash(tr);
+
+	return tr;
+}
+
+/**
+ * @param tx a transaction object
+ * @description takes a tx object, adds a field for 
+ * public key and adds the output of signing the transaction
+ * hash with the private key.
+ * @field pubKey is the public key
+ * @field signature the signed tx.hash w/ private key
+ * @returns a transaction object
+ */
+async function authorizeTransaction(tx) {
+	tx.pubKey = PUB_KEY_TEXT;
+	tx.signature = await createSignature(tr.hash, PRIV_KEY_TEXT);
+	return tx;
+}
+
+
 async function addPoem() {
 	var transactions = [];
 
-	// TODO: add poem lines as authorized transactions
-	// for (let line of poem) {
-	// }
+	for (let line of poem) {
+		let tx = createTransaction(line);
+		tx = await authorizeTransaction(tx);
+		transactions.push(tx);
+	}
 
 	var bl = createBlock(transactions);
 
@@ -111,6 +146,13 @@ function blockHash(bl) {
 	).digest("hex");
 }
 
+/**
+ * 
+ * @param  bl transaction block
+ * @description verifies the transaction 
+ * block has been well conceived
+ * @returns true if all verifications are ok
+ */
 async function verifyBlock(bl) {
 	if (bl.data == null) return false;
 	if (bl.index === 0) {
@@ -129,9 +171,17 @@ async function verifyBlock(bl) {
 		if (!Array.isArray(bl.data)) return false;
 
 		// TODO: verify transactions in block
+
 	}
 
 	return true;
+}
+
+function verifyTransaction(tx) {
+	// TODO: verify tx data
+	// TODO: verify tx hash
+	// TODO: verify tx pubKey
+	// TODO: verify tx signature
 }
 
 async function verifyChain(chain) {
